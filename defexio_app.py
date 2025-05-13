@@ -12,15 +12,27 @@ uploaded_file = st.file_uploader("Upload a surface image", type=["jpg", "jpeg", 
 threshold = st.slider("Detection Threshold", 0, 255, 150)
 samples = st.slider("Monte Carlo Samples", 100, 5000, 1000)
 
-def monte_carlo_fault_area(mask, samples):
+def monte_carlo_area_with_stats(mask, samples=1000, trials=30):
     height, width = mask.shape
-    hits = 0
-    for _ in range(samples):
-        x = random.randint(0, width - 1)
-        y = random.randint(0, height - 1)
-        if mask[y, x] == 255:
-            hits += 1
-    return (hits / samples) * (width * height)
+    pixel_area = width * height
+    results = []
+
+    for _ in range(trials):
+        hits = 0
+        for _ in range(samples):
+            x = random.randint(0, width - 1)
+            y = random.randint(0, height - 1)
+            if mask[y, x] == 255:
+                hits += 1
+        estimated_area = (hits / samples) * pixel_area
+        results.append(estimated_area)
+
+    mean_area = np.mean(results)
+    std_dev = np.std(results)
+    variance = np.var(results)
+
+    return mean_area, std_dev, variance
+
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("L")
@@ -30,5 +42,8 @@ if uploaded_file:
     _, binary_mask = cv2.threshold(img_np, threshold, 255, cv2.THRESH_BINARY)
     st.image(binary_mask, caption="Detected Fault Area", use_container_width=True)
 
-    area = monte_carlo_fault_area(binary_mask, samples)
-    st.success(f"Estimated Fault Area: {int(area)} pixels²")
+    mean_area, std_dev, variance = monte_carlo_area_with_stats(binary_mask, samples=samples, trials=30)
+
+    st.success(f"Estimated Fault Area: {int(mean_area)} pixels²")
+    st.info(f"Standard Deviation: ±{int(std_dev)} pixels²")
+    st.caption(f"Variance: {int(variance)} pixels²")
