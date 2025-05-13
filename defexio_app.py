@@ -25,10 +25,10 @@ def monte_carlo_fault_area(mask, samples):
 if uploaded_file:
     image = Image.open(uploaded_file).convert("L")
     img_np = np.array(image)
-    st.image(image, caption="Original Image", use_column_width=True)
+    st.image(image, caption="Original Image", use_container_width=True)
 
     _, binary_mask = cv2.threshold(img_np, threshold, 255, cv2.THRESH_BINARY)
-    st.image(binary_mask, caption="Detected Fault Area", use_column_width=True)
+    st.image(binary_mask, caption="Detected Fault Area", use_container_width=True)
 
     area = monte_carlo_fault_area(binary_mask, samples)
     st.success(f"Estimated Fault Area: {int(area)} pixels²")
